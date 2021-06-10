@@ -1,0 +1,213 @@
+/* Copyright (c) 2019, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include <dt-bindings/clock/qcom,gcc-sdm845.h>
+#include <dt-bindings/clock/qcom,camcc-sdm845.h>
+#include <dt-bindings/clock/qcom,dispcc-sdm845.h>
+#include <dt-bindings/clock/qcom,rpmh.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/input/input.h>
+#include "sdm710-camera-sensor-mot-astro-overlay.dtsi"
+#include "sdm710-moto-common-overlay-base.dtsi"
+#include "sdm710-astro-display.dtsi"
+#include "sdm710-astro-touchscreen.dtsi"
+#include "sdm710-astro-sensor-overlay.dtsi"
+#include "sdm710-astro-audio-overlay.dtsi"
+#include "sdm710-astro-fingerprint.dtsi"
+
+&sdhc_2 {
+        cd-gpios = <&tlmm 96 0>;
+};
+
+&sde_dp {
+	status = "disabled";
+};
+
+&mdss_mdp {
+	connectors = <&sde_rscc &sde_wb>;
+};
+
+&tlmm {
+       /* Pinctrl setting for assist key */
+	assist_key {
+		gpio_key_default: gpio_key_default {
+			mux {
+				pins = "gpio40";
+				function = "gpio";
+			};
+			config {
+				pins = "gpio40";
+				drive-strength = <2>;
+				bias-pull-up;
+			};
+		};
+	};
+};
+
+&soc {
+	gpio_keys {
+		compatible = "gpio-keys";
+		label = "gpio-keys";
+
+		pinctrl-names = "default";
+                pinctrl-0 = <&gpio_key_default
+				&key_vol_up_default>;
+
+		assist_key {
+			label = "assist_key";
+			gpios = <&tlmm 40 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,code = <KEY_SEARCH>;
+			gpio-key,wakeup;
+			debounce-interval = <15>;
+			linux,can-disable;
+		};
+		vol_up {
+			label = "volume_up";
+			gpios = <&pm660l_gpios 7 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,code = <115>;
+			gpio-key,wakeup;
+			debounce-interval = <15>;
+			linux,can-disable;
+		};
+	};
+
+	sys_temp_support {
+		compatible = "mmi,sys-temp";
+		mmi,temperature-names = "front_temp",
+					"back_temp";
+		status = "ok";
+	};
+};
+
+&usb_qmp_dp_phy {
+	status = "disabled";
+};
+
+&usb0 {
+	dwc3@a600000 {
+		usb-phy = <&qusb_phy0>, <&usb_nop_phy>;
+		maximum-speed = "high-speed";
+	};
+};
+
+&pm660_haptics {
+        qcom,vmax-mv = <3100>;
+        qcom,ilim-ma = <400>;
+        qcom,wave-play-rate-us = <20000>;
+        qcom,actuator-type = <1>;
+        status = "okay";
+};
+
+&red_led {
+	status = "ok";
+	linux,name = "charging";
+};
+
+&green_led {
+	status = "disabled";
+};
+
+&blue_led {
+	status = "disabled";
+};
+
+&qusb_phy0 {
+	qcom,qusb-phy-host-init-seq =
+			/* <value reg_offset> */
+			   <0x23 0x210 /* PWR_CTRL1 */
+			    0x03 0x04  /* PLL_ANALOG_CONTROLS_TWO */
+			    0x7c 0x18c /* PLL_CLOCK_INVERTERS */
+			    0x80 0x2c  /* PLL_CMODE */
+			    0x0a 0x184 /* PLL_LOCK_DELAY */
+			    0x19 0xb4  /* PLL_DIGITAL_TIMERS_TWO */
+			    0x40 0x194 /* PLL_BIAS_CONTROL_1 */
+			    0x20 0x198 /* PLL_BIAS_CONTROL_2 */
+			    0x21 0x214 /* PWR_CTRL2 */
+			    0x08 0x220 /* IMP_CTRL1 */
+			    0x58 0x224 /* IMP_CTRL2 */
+			    0x45 0x240 /* TUNE1 */
+			    0x29 0x244 /* TUNE2 */
+			    0xca 0x248 /* TUNE3 */
+			    0x04 0x24c /* TUNE4 */
+			    0x03 0x250 /* TUNE5 */
+			    0x00 0x23c /* CHG_CTRL2 */
+			    0x22 0x210>; /* PWR_CTRL1 */
+	qcom,qusb-phy-init-seq =
+			/* <value reg_offset> */
+			   <0x23 0x210 /* PWR_CTRL1 */
+			    0x03 0x04  /* PLL_ANALOG_CONTROLS_TWO */
+			    0x7c 0x18c /* PLL_CLOCK_INVERTERS */
+			    0x80 0x2c  /* PLL_CMODE */
+			    0x0a 0x184 /* PLL_LOCK_DELAY */
+			    0x19 0xb4  /* PLL_DIGITAL_TIMERS_TWO */
+			    0x40 0x194 /* PLL_BIAS_CONTROL_1 */
+			    0x20 0x198 /* PLL_BIAS_CONTROL_2 */
+			    0x21 0x214 /* PWR_CTRL2 */
+			    0x08 0x220 /* IMP_CTRL1 */
+			    0x58 0x224 /* IMP_CTRL2 */
+			    0x47 0x240 /* TUNE1 */
+			    0x29 0x244 /* TUNE2 */
+			    0xca 0x248 /* TUNE3 */
+			    0x04 0x24c /* TUNE4 */
+			    0x03 0x250 /* TUNE5 */
+			    0x00 0x23c /* CHG_CTRL2 */
+			    0x22 0x210>; /* PWR_CTRL1 */
+};
+
+&vendor {
+        mot_batterydata: qcom,battery-data {
+                df-serialnum = "SB18C28957";
+                #include "batterydata-jk50-scud.dtsi"
+		#include "batterydata-jk50-77226-scud.dtsi"
+		#include "batterydata-jk50-atl.dtsi"
+        };
+};
+
+&pm660_0 {
+	pm660_mmi: qcom,qpnp-smb2-mmi {
+		status = "ok";
+		compatible = "qcom,qpnp-smbcharger-mmi";
+		qcom,pmic-revid = <&pm660_revid>;
+		qcom,enable-charging-limit;
+		qcom,upper-limit-capacity = <75>;
+		qcom,lower-limit-capacity = <60>;
+		qcom,mmi-temp-zones = <0 4200 1000 0>,
+				<15 0 1000 1000>,
+				<45 0 3000 3000>,
+				<60 4200 2500 0>;
+		qcom,iterm-ma = <150>;
+		qcom,vfloat-comp-uv = <20000>;
+		qcom,force-hvdcp-5v;
+	};
+};
+
+&pm660_fg {
+        qcom,battery-data = <&mot_batterydata>;
+        qcom,fg-force-load-profile = <1>;
+        qcom,fg-cutoff-voltage = <3400>;
+        qcom,fg-empty-voltage = <3200>;
+	qcom,fg-sys-term-current = <(-250)>;
+	qcom,battery-thermal-coefficients = [92 50 ff];
+};
+
+&pm660_charger {
+	qcom,battery-data = <&mot_batterydata>;
+	qcom,float-option = <1>;
+	qcom,auto-recharge-soc = <99>;
+	qcom,dcp-current-ua = <2000000>;
+	qcom,thermal-mitigation = <3000000 2600000
+				2300000 1700000
+				1000000 800000
+				500000>;
+};

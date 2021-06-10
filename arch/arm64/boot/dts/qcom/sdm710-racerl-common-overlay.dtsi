@@ -1,0 +1,243 @@
+/* Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include <dt-bindings/clock/qcom,gcc-sdm845.h>
+#include <dt-bindings/clock/qcom,camcc-sdm845.h>
+#include <dt-bindings/clock/qcom,dispcc-sdm845.h>
+#include <dt-bindings/clock/qcom,rpmh.h>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+
+#include "sdm710-moto-common-overlay-base.dtsi"
+#include "sdm710-racer-display.dtsi"
+#include "sdm670-audio-overlay.dtsi"
+#include "sdm710-camera-sensor-mot-racerl-overlay.dtsi"
+#include "sdm710-racerl-touchscreen.dtsi"
+#include "sdm710-racerl-fingerprint.dtsi"
+#include "sdm710-racerl-haptic-overlay.dtsi"
+#include "sdm710-racerl-sensor-overlay.dtsi"
+#include "sdm710-racerl-audio-overlay.dtsi"
+
+&vendor {
+        mot_batterydata: qcom,battery-data {
+                qcom,batt-id-range-pct = <1000>;
+                #include "batterydata-kv30kv40-atl.dtsi"
+        };
+};
+
+&usb_qmp_dp_phy {
+	status = "disabled";
+};
+
+&usb0 {
+	dwc3@a600000 {
+		usb-phy = <&qusb_phy0>, <&usb_nop_phy>;
+		maximum-speed = "high-speed";
+	};
+};
+
+&tlmm {
+	laser_xsdn_active: laser_xsdn_active {
+		mux {
+			pins = "gpio24";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio24";
+			drive-strength = <2>;
+			bias-disable;
+		};
+	};
+
+	laser_xsdn_suspend: laser_xsdn_suspend {
+		mux {
+			pins = "gpio24";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio24";
+			drive-strength = <2>;
+			bias-pull-down; /* PULL DOWN */
+		};
+	};
+
+	laser_int_active: laser_int_active {
+		mux {
+			pins = "gpio21";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio21";
+			drive-strength = <2>;
+			bias-pull-up; /* PULL UP */
+		};
+	};
+
+	laser_int_suspend: laser_int_suspend {
+		mux {
+			pins = "gpio21";
+			function = "gpio";
+		};
+
+		config {
+			pins = "gpio21";
+			drive-strength = <2>;
+			bias-pull-down; /* PULL DOWN */
+		};
+	};
+};
+
+&soc {
+	tof_vdd: tof_vdd_vreg {
+		compatible = "regulator-fixed";
+		regulator-name = "tof_vdd";
+		regulator-min-microvolt = <2800000>;
+		regulator-max-microvolt = <2800000>;
+		regulator-enable-ramp-delay = <135>;
+		gpio = <&tlmm 49 0>;
+		enable-active-high;
+		vin-supply = <&pm660_l13>;
+		status = "okay";
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		label = "gpio-keys";
+
+		pinctrl-names = "default";
+		pinctrl-0 = <&key_cam_snapshot_default
+			     &key_vol_up_default>;
+
+		cam_snapshot {
+			label = "cam_snapshot";
+			gpios = <&tlmm 91 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,code = <766>;
+			gpio-key,wakeup;
+			debounce-interval = <15>;
+			linux,can-disable;
+		};
+
+		vol_up {
+			label = "volume_up";
+			gpios = <&pm660l_gpios 7 GPIO_ACTIVE_LOW>;
+			linux,input-type = <1>;
+			linux,code = <115>;
+			gpio-key,wakeup;
+			debounce-interval = <15>;
+			linux,can-disable;
+		};
+	};
+};
+
+&qupv3_se3_i2c {
+	status = "okay";
+	stmvl53l1@29 {
+		status = "ok";
+		compatible = "st,stmvl53l1";
+		reg = <0x29>;
+		vdd-vl53l1-supply = <&tof_vdd>;
+		gpios = <&tlmm 24 0>, <&tlmm 21 0>;
+		pinctrl-names = "laser_default", "laser_suspend";
+		pinctrl-0 = <&laser_xsdn_active &laser_int_active>;
+		pinctrl-1 = <&laser_xsdn_suspend &laser_int_suspend>;
+		st,sensorthreshold = <60 65>;
+		st,xtalkval = <0x9C4 0xFACD 0x0>;
+	};
+};
+
+&pm660_0 {
+	pm660_mmi: qcom,qpnp-smb2-mmi {
+		status = "ok";
+		compatible = "qcom,qpnp-smbcharger-mmi";
+		qcom,pmic-revid = <&pm660_revid>;
+		qcom,enable-charging-limit;
+		qcom,upper-limit-capacity = <75>;
+		qcom,lower-limit-capacity = <60>;
+		qcom,mmi-temp-zones = <0 4200 776 0>,
+					<10 4200 1940 776>,
+					<15 0 1940 1940>,
+					<45 4200 3600 2000>,
+					<60 4200 1940 0>;
+		qcom,iterm-ma = <194>;
+		qcom,vfloat-comp-uv = <20000>;
+		qcom,force-hvdcp-5v;
+	};
+};
+
+&pm660_fg {
+        qcom,battery-data = <&mot_batterydata>;
+        qcom,fg-force-load-profile = <1>;
+        qcom,fg-cutoff-voltage = <3200>;
+        qcom,fg-empty-voltage = <3000>;
+};
+
+&tlmm {
+	tps61280_en_default: tps61280_en_default {
+		mux {
+			pins = "gpio135";
+		};
+		config {
+			pins = "gpio135";
+			output-high;
+		};
+	};
+};
+
+&qupv3_se4_i2c {
+	status = "ok";
+	tps61280@75 {
+		compatible = "ti,tps61280";
+		reg = <0x75>;
+		ti,config = <0x0D>;
+		ti,vout-floor = <0x17>;
+		ti,vout-roof = <0x1F>;
+		ti,ilim = <0x0F>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&tps61280_en_default>;
+	};
+};
+
+&dsi_dual_nt35597_truly_video {
+	qcom,mdss-dsi-no-panel-on-read-support;
+};
+
+&dsi_dual_nt35597_truly_cmd {
+	qcom,mdss-dsi-no-panel-on-read-support;
+};
+
+&dsi_nt35597_truly_dsc_video {
+	qcom,mdss-dsi-no-panel-on-read-support;
+};
+
+&dsi_nt35597_truly_dsc_cmd {
+	qcom,mdss-dsi-no-panel-on-read-support;
+};
+
+&dsi_dual_nt35597_truly_video_display {
+	qcom,mdss-dsi-no-panel-on-read-support;
+};
+
+&red_led {
+	status = "ok";
+	linux,name = "charging";
+};
+
+&green_led {
+	status = "disabled";
+};
+
+&blue_led {
+	status = "disabled";
+};

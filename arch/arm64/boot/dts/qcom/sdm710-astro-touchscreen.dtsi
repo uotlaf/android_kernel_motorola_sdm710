@@ -1,0 +1,148 @@
+&tlmm{
+	pmx_ts_int_active {
+		ts_int_active: ts_int_active {
+			   mux {
+				   pins = "gpio125";
+				   function = "gpio";
+			   };
+
+			   config {
+				   pins = "gpio125";
+				   drive-strength = <8>;
+				   bias-pull-up;
+			   };
+		   };
+	};
+
+	pmx_ts_int_suspend {
+		ts_int_suspend: ts_int_suspend {
+			mux {
+				pins = "gpio125";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio125";
+				drive-strength = <2>;
+				bias-disable;
+			};
+		};
+	};
+	pmx_ts_reset_active {
+		ts_reset_active: ts_reset_active {
+				 mux {
+					 pins = "gpio99";
+					 function = "gpio";
+				 };
+
+				 config {
+					 pins = "gpio99";
+					 drive-strength = <8>;
+					 bias-pull-up;
+				 };
+			 };
+	};
+
+	pmx_ts_reset_suspend {
+		ts_reset_suspend: ts_reset_suspend {
+			mux {
+				pins = "gpio99";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio99";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+	};
+	pmx_ts_release {
+		ts_release: ts_release {
+			mux {
+				pins = "gpio125", "gpio99";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio125", "gpio99";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+	};
+};
+
+&pm660_l11 {
+	regulator-always-on;
+};
+
+&qupv3_se9_spi_pins {
+       qupv3_se9_spi_sleep: qupv3_se9_spi_sleep {
+               mux {
+                       pins = "gpio4", "gpio6","gpio7";
+                       function = "gpio";
+               };
+
+               config {
+                       pins = "gpio4", "gpio6","gpio7";
+                       drive-strength = <6>;
+                       bias-disable;
+               };
+       };
+       qupv3_se9_cs_sleep: qupv3_se9_cs_sleep {
+               mux {
+                       pins = "gpio5";
+                       function = "gpio";
+               };
+
+               config {
+                       pins = "gpio5";
+                       drive-strength = <6>;
+                       bias-pull-up;
+               };
+       };
+};
+
+&qupv3_se9_spi {
+	status = "ok";
+	pinctrl-1 = <&qupv3_se9_spi_sleep &qupv3_se9_cs_sleep>;
+	himax_0flash_ts@0 {
+		compatible = "himax,hxcommon";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		spi-cpha;
+		himax,panel-coords = <0 720 0 1600>;
+		himax,display-coords = <0 720 0 1600>;
+		himax,touch_info = <32 18 0 720 1600 10 0 1>;
+		himax,irq-gpio = <&tlmm 125 0x2008>;
+		himax,rst-gpio = <&tlmm 99  0x00>;
+		report_type = <1>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <125 0x02>;
+		lab-supply = <&lcdb_ldo_vreg>;
+		ibb-supply = <&lcdb_ncp_vreg>;
+		pinctrl-names = "pmx_ts_active","pmx_ts_suspend";
+		pinctrl-0 = <&ts_int_active &ts_reset_active>;
+		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+	};
+	nova_0flash_ts@1 {
+		compatible = "novatek,NVT-ts-spi";
+		reg = <1>;
+		spi-max-frequency = <9600000>;
+		novatek,swrst-n8-addr = <0x03F0FE>;
+		novatek,spi-rd-fast-addr = <0x03F310>;
+		spi-cpha;
+		novatek,irq-gpio = <&tlmm 125 0x2008>;
+		novatek,reset-gpio = <&tlmm 99  0x00>;
+		report_type = <1>;
+		novatek,def-max-resolution = <720 1600>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <125 0x02>;
+		lab-supply = <&lcdb_ldo_vreg>;
+		ibb-supply = <&lcdb_ncp_vreg>;
+		pinctrl-names = "pmx_ts_active","pmx_ts_suspend";
+		pinctrl-0 = <&ts_int_active &ts_reset_active>;
+		pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+	};
+};
